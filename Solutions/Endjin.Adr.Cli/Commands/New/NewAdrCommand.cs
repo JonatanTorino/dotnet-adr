@@ -16,6 +16,8 @@ using Endjin.Adr.Cli.Abstractions;
 using Endjin.Adr.Cli.Configuration;
 using Endjin.Adr.Cli.Configuration.Contracts;
 using Endjin.Adr.Cli.Templates;
+using Endjin.Adr.Cli.Domain.Contracts;
+using Endjin.Adr.Cli.Domain.Models;
 
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -27,12 +29,18 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
     private readonly ITemplateSettingsManager templateSettingsManager;
     private readonly IAppEnvironmentManager appEnvironmentManager;
     private readonly IConfigurationLocator configurationLocator;
+    private readonly IAdrRepository adrRepository;
 
-    public NewAdrCommand(ITemplateSettingsManager templateSettingsManager, IAppEnvironmentManager appEnvironmentManager, IConfigurationLocator configurationLocator)
+    public NewAdrCommand(
+        ITemplateSettingsManager templateSettingsManager,
+        IAppEnvironmentManager appEnvironmentManager,
+        IConfigurationLocator configurationLocator,
+        IAdrRepository adrRepository)
     {
         this.templateSettingsManager = templateSettingsManager;
         this.appEnvironmentManager = appEnvironmentManager;
         this.configurationLocator = configurationLocator;
+        this.adrRepository = adrRepository;
     }
 
     public override async Task<int> ExecuteAsync([NotNull] CommandContext context, [NotNull] Settings settings)
@@ -85,19 +93,29 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
                 }
             }
 
-            List<Adr> documents = await GetAllAdrFilesFromCurrentDirectoryAsync(targetPath).ConfigureAwait(false);
+            Directory.CreateDirectory(targetPath);
+
+            IReadOnlyList<Adr> documents = await this.adrRepository
+                .GetAllAsync(new AdrRepositoryOptions(targetPath))
+                .ConfigureAwait(false);
 
             Adr adr = new()
             {
                 Content = CreateNewDefaultTemplate(settings.Title, this.templateSettingsManager, templatePath),
                 RecordNumber = documents.Count == 0 ? 1 : documents.OrderBy(x => x.RecordNumber).Last().RecordNumber + 1,
                 Title = settings.Title,
+                Metadata = new Dictionary<string, string>(),
+                Sections = Array.Empty<AdrSection>(),
+                Links = Array.Empty<AdrLink>(),
+                Status = AdrStatus.Empty,
             };
 
             if (settings.Id.HasValue)
             {
                 // if an id has been specified, check to see if we're superseding an existing ADR, and mark it as updated, pointing to the new ADR.
-                Adr supersede = documents.Find(x => x.RecordNumber == settings.Id);
+                Adr supersede = await this.adrRepository
+                    .GetByIdAsync(settings.Id.Value, new AdrRepositoryOptions(targetPath))
+                    .ConfigureAwait(false);
 
                 if (supersede is not null)
                 {
@@ -143,35 +161,6 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
             .Replace(templateContents, $"# {title}")
             .Replace("{DATE}", DateTime.Now.ToShortDateString());
     }
-
-    private static async Task<List<Adr>> GetAllAdrFilesFromCurrentDirectoryAsync(string targetPath)
-    {
-        if (!Directory.Exists(targetPath))
-        {
-            Directory.CreateDirectory(targetPath);
-        }
-
-        List<Adr> documents = new();
-        Regex fileNameRegExp = FileNameRegex();
-
-        foreach (string file in Directory.EnumerateFiles(targetPath, "*.md").Where(path => fileNameRegExp.IsMatch(path)))
-        {
-            FileInfo fileInfo = new(file);
-            Adr existingAdr = new()
-            {
-                Path = file,
-                RecordNumber = int.Parse(fileInfo.Name[..4]),
-                Content = await File.ReadAllTextAsync(file).ConfigureAwait(false),
-            };
-
-            documents.Add(existingAdr);
-        }
-
-        return documents;
-    }
-
-    [GeneratedRegex(@"(\d{4}.*\.md)")]
-    private static partial Regex FileNameRegex();
 
     [GeneratedRegex(@"((?:^-{3})(?:.*\n)*(?:^-{3})\n# Title)", RegexOptions.Multiline)]
     private static partial Regex YamlHeaderRegex();

@@ -5,7 +5,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 ## Seguimiento
 
 - [x] Paso 1: [Matriz de paridad con `adr-tools`](./adr-tools-parity-matrix.md).
-- [ ] Paso 2: Diseñar la capa de dominio para ADRs.
+- [x] Paso 2: Diseñar la capa de dominio para ADRs.
 - [ ] Paso 3: Ampliar el flujo de `adr new`.
 - [ ] Paso 4: Incorporar comandos adicionales con Spectre.
 - [ ] Paso 5: Implementar la rama `adr generate`.
@@ -21,6 +21,8 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
    - Crear servicios para descubrimiento, lectura, parseo de secciones, estados y vínculos.
    - Registrar la capa por medio de inyección de dependencias, reutilizando Markdig/YamlDotNet y extendiendo Adr.
    - Exponer estados y enlaces a través de este núcleo para reutilización en los nuevos comandos.
+   - ✅ Repositorio de ADR con descubrimiento en disco, lector y parser Markdig/YamlDotNet registrado vía DI.
+   - ✅ Modelo `Adr` extendido con secciones, estado, enlaces y metadatos listos para ser reutilizados.
 3. **Ampliar el flujo de `adr new`**
    - Permitir múltiples banderas `-s` y `-l` dentro de `NewAdrCommand`.
    - Actualizar estados y enlaces simétricos y habilitar la inyección de fecha para pruebas.
