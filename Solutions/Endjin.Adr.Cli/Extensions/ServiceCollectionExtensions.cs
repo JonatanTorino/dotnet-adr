@@ -7,6 +7,7 @@ using Endjin.Adr.Cli.Configuration.Contracts;
 using Endjin.Adr.Cli.Domain.Contracts;
 using Endjin.Adr.Cli.Domain.Parsing;
 using Endjin.Adr.Cli.Domain.Storage;
+using Endjin.Adr.Cli.Infrastructure.Workspace;
 using Endjin.Adr.Cli.Templates;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddTransient<ITemplatePackageManager, NuGetTemplatePackageManager>();
         serviceCollection.AddTransient<ITemplateSettingsManager, TemplateSettingsManager>();
         serviceCollection.AddTransient<IConfigurationLocator, FileSystemConfigurationLocator>();
+        serviceCollection.AddTransient<IAdrWorkspaceContextFactory, AdrWorkspaceContextFactory>();
         serviceCollection.AddSingleton<IAdrDocumentParser, MarkdigAdrParser>();
         serviceCollection.AddTransient<IAdrFileLocator, FileSystemAdrLocator>();
         serviceCollection.AddTransient<IAdrDocumentReader, FileSystemAdrDocumentReader>();

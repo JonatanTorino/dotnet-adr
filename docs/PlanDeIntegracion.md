@@ -7,7 +7,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 - [x] Paso 1: [Matriz de paridad con `adr-tools`](./adr-tools-parity-matrix.md).
 - [x] Paso 2: Diseñar la capa de dominio para ADRs.
 - [x] Paso 3: Ampliar el flujo de `adr new`.
-- [ ] Paso 4: Incorporar comandos adicionales con Spectre.
+- [x] Paso 4: Incorporar comandos adicionales con Spectre.
 - [ ] Paso 5: Implementar la rama `adr generate`.
 - [ ] Paso 6: Actualizar la UX/DX.
 
@@ -31,6 +31,10 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 4. **Incorporar comandos adicionales con Spectre**
    - Implementar `adr list`, `adr link` y `adr upgrade repository` sobre el nuevo servicio.
    - Formatear la salida con `AnsiConsole` y validar efectos en disco mediante pruebas BDD y unitarias.
+   - ✅ `adr list` presenta un tablero con número, título, estado y ruta relativa a partir del repositorio detectado automáticamente.
+   - ✅ `adr link` permite enlazar ADR existentes con relaciones simétricas reutilizando el formateador de estados.
+   - ✅ `adr upgrade repository` normaliza las líneas `Date:` a formato ISO-8601 en todo el árbol de ADRs.
+   - ✅ Pruebas unitarias validan el formateo de estado y la normalización de fechas (los escenarios BDD quedarán para la siguiente iteración).
 5. **Implementar la rama `adr generate`**
    - Agregar subcomandos `toc` y `graph` que produzcan, respectivamente, Markdown y Graphviz DOT.
    - Permitir la parametrización de prefijos, extensiones e intro/outro, y validar con snapshots de prueba.

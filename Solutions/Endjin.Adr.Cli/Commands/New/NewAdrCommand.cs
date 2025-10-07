@@ -9,17 +9,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Endjin.Adr.Cli.Abstractions;
+using Endjin.Adr.Cli.Commands.Shared;
 using Endjin.Adr.Cli.Configuration;
-using Endjin.Adr.Cli.Configuration.Contracts;
 using Endjin.Adr.Cli.Templates;
 using Endjin.Adr.Cli.Domain.Contracts;
 using Endjin.Adr.Cli.Domain.Models;
 using Endjin.Adr.Cli.Domain.Formatting;
+using Endjin.Adr.Cli.Infrastructure.Workspace;
 
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -30,19 +30,19 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 {
     private readonly ITemplateSettingsManager templateSettingsManager;
     private readonly IAppEnvironmentManager appEnvironmentManager;
-    private readonly IConfigurationLocator configurationLocator;
     private readonly IAdrRepository adrRepository;
+    private readonly IAdrWorkspaceContextFactory workspaceFactory;
 
     public NewAdrCommand(
         ITemplateSettingsManager templateSettingsManager,
         IAppEnvironmentManager appEnvironmentManager,
-        IConfigurationLocator configurationLocator,
-        IAdrRepository adrRepository)
+        IAdrRepository adrRepository,
+        IAdrWorkspaceContextFactory workspaceFactory)
     {
         this.templateSettingsManager = templateSettingsManager;
         this.appEnvironmentManager = appEnvironmentManager;
-        this.configurationLocator = configurationLocator;
         this.adrRepository = adrRepository;
+        this.workspaceFactory = workspaceFactory;
     }
 
     public override async Task<int> ExecuteAsync([NotNull] CommandContext context, [NotNull] Settings settings)
@@ -51,51 +51,12 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
         try
         {
-            string targetPath = string.Empty;
-            string templatePath = null;
+            AdrWorkspaceContext workspace = await this.workspaceFactory
+                .CreateAsync(settings.Path)
+                .ConfigureAwait(false);
 
-            // If the user hasn't specified the path to create the ADR
-            if (!string.IsNullOrEmpty(settings.Path))
-            {
-                targetPath = settings.Path;
-            }
-            else
-            {
-                // We'll attempt to see if there's a configuration file in the root of the "project".
-                // We'll make the assumption that the root of the "project" is defined by the presence of
-                // a ".git" directory, otherwise we'll just use the current location the ADR tool was launched from.
-                string rootConfiguration = this.configurationLocator.LocatedRootConfiguration();
-
-                if (!string.IsNullOrEmpty(rootConfiguration))
-                {
-                    string configText = await File.ReadAllTextAsync(rootConfiguration).ConfigureAwait(false);
-
-                    JsonSerializerOptions options = new()
-                    {
-                        PropertyNameCaseInsensitive = true,
-                    };
-
-                    AdrConfig config = JsonSerializer.Deserialize<AdrConfig>(configText, options);
-                    FileInfo rootConfigurationFileInfo = new(rootConfiguration);
-
-                    // The configuration path is relative to config file.
-                    targetPath = Path.GetFullPath(Path.Combine(rootConfigurationFileInfo.Directory.FullName, config.Path));
-
-                    if (!rootConfigurationFileInfo.Directory.Exists)
-                    {
-                        rootConfigurationFileInfo.Directory.Create();
-                    }
-
-                    templatePath = config.TemplatePath;
-                }
-
-                if (string.IsNullOrEmpty(targetPath))
-                {
-                    targetPath = Environment.CurrentDirectory;
-                }
-            }
-
-            targetPath = Path.GetFullPath(targetPath);
+            string targetPath = workspace.RepositoryPath;
+            string templatePath = workspace.TemplatePath;
 
             Directory.CreateDirectory(targetPath);
 
@@ -121,7 +82,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
             string newFileName = adr.SafeFileName();
             string newFilePath = Path.Combine(targetPath, newFileName);
-            string newDisplayTitle = FormatDisplayTitle(recordNumber, settings.Title);
+            string newDisplayTitle = AdrCommandUtilities.FormatDisplayTitle(recordNumber, settings.Title);
 
             List<string> supersedeReferences = CollectSupersedeReferences(settings);
             List<Adr> supersededDocuments = ResolveAdrReferences(supersedeReferences, documents);
@@ -134,8 +95,8 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
             foreach (Adr superseded in supersededDocuments)
             {
-                string relativePathFromNew = GetMarkdownRelativePath(targetPath, superseded.Path);
-                string targetDisplayTitle = FormatDisplayTitle(superseded.RecordNumber, superseded.Title);
+                string relativePathFromNew = AdrCommandUtilities.GetMarkdownRelativePath(targetPath, superseded.Path);
+                string targetDisplayTitle = AdrCommandUtilities.FormatDisplayTitle(superseded.RecordNumber, superseded.Title);
                 string supersedeLine = $"Supercedes [{targetDisplayTitle}]({relativePathFromNew})";
 
                 if (!newStatusEntries.Any(entry => string.Equals(entry, supersedeLine, StringComparison.Ordinal)))
@@ -148,7 +109,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
                 supersededStatusEntries.RemoveAll(entry => string.Equals(entry, "Accepted", StringComparison.Ordinal));
 
-                string relativePathFromSuperseded = GetMarkdownRelativePath(Path.GetDirectoryName(superseded.Path) ?? targetPath, newFilePath);
+                string relativePathFromSuperseded = AdrCommandUtilities.GetMarkdownRelativePath(Path.GetDirectoryName(superseded.Path) ?? targetPath, newFilePath);
                 string supersededByLine = $"Superceded by [{newDisplayTitle}]({relativePathFromSuperseded})";
 
                 if (!supersededStatusEntries.Any(entry => string.Equals(entry, supersededByLine, StringComparison.Ordinal)))
@@ -164,8 +125,8 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
             foreach (LinkSpecification specification in linkSpecifications)
             {
-                string relativePathFromNew = GetMarkdownRelativePath(targetPath, specification.Target.Path);
-                string targetDisplayTitle = FormatDisplayTitle(specification.Target.RecordNumber, specification.Target.Title);
+                string relativePathFromNew = AdrCommandUtilities.GetMarkdownRelativePath(targetPath, specification.Target.Path);
+                string targetDisplayTitle = AdrCommandUtilities.FormatDisplayTitle(specification.Target.RecordNumber, specification.Target.Title);
                 string forwardLine = $"{specification.ForwardRelationship} [{targetDisplayTitle}]({relativePathFromNew})";
 
                 if (!string.IsNullOrWhiteSpace(specification.ForwardRelationship) &&
@@ -177,7 +138,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
                 string targetContent = await LoadDocumentContentAsync(specification.Target, pendingUpdates).ConfigureAwait(false);
                 List<string> targetStatusEntries = AdrMarkdownFormatter.ExtractStatusEntries(targetContent).ToList();
 
-                string relativePathFromTarget = GetMarkdownRelativePath(Path.GetDirectoryName(specification.Target.Path) ?? targetPath, newFilePath);
+                string relativePathFromTarget = AdrCommandUtilities.GetMarkdownRelativePath(Path.GetDirectoryName(specification.Target.Path) ?? targetPath, newFilePath);
                 string reverseLine = $"{specification.ReverseRelationship} [{newDisplayTitle}]({relativePathFromTarget})";
 
                 if (!targetStatusEntries.Any(entry => string.Equals(entry, reverseLine, StringComparison.Ordinal)))
@@ -291,7 +252,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
         foreach (string reference in references)
         {
-            Adr match = ResolveAdrReference(reference, documents)
+            Adr match = AdrCommandUtilities.ResolveAdrReference(reference, documents)
                 ?? throw new CommandRuntimeException($"Unable to locate ADR '{reference}'.");
 
             if (!resolved.Any(candidate => candidate.Path == match.Path))
@@ -326,7 +287,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
                 throw new CommandRuntimeException($"Link specification '{specification}' is invalid. Use TARGET:LINK:REVERSE format.");
             }
 
-            Adr target = ResolveAdrReference(parts[0], documents)
+            Adr target = AdrCommandUtilities.ResolveAdrReference(parts[0], documents)
                 ?? throw new CommandRuntimeException($"Unable to locate ADR '{parts[0]}' for link specification '{specification}'.");
 
             string forwardRelationship = parts[1].Trim();
@@ -343,34 +304,6 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
         return specifications;
     }
 
-    private static Adr ResolveAdrReference(string reference, IReadOnlyList<Adr> documents)
-    {
-        if (string.IsNullOrWhiteSpace(reference))
-        {
-            return null;
-        }
-
-        string candidate = reference.Trim();
-
-        if (int.TryParse(candidate, NumberStyles.Integer, CultureInfo.InvariantCulture, out int recordNumber))
-        {
-            return documents.FirstOrDefault(doc => doc.RecordNumber == recordNumber);
-        }
-
-        Adr byFileName = documents.FirstOrDefault(doc =>
-            !string.IsNullOrEmpty(doc.Path) &&
-            Path.GetFileName(doc.Path).Contains(candidate, StringComparison.OrdinalIgnoreCase));
-
-        if (byFileName is not null)
-        {
-            return byFileName;
-        }
-
-        return documents.FirstOrDefault(doc =>
-            !string.IsNullOrWhiteSpace(doc.Title) &&
-            doc.Title.Contains(candidate, StringComparison.OrdinalIgnoreCase));
-    }
-
     private static async Task<string> LoadDocumentContentAsync(Adr document, Dictionary<string, string> pendingUpdates)
     {
         if (pendingUpdates.TryGetValue(document.Path, out string content))
@@ -381,28 +314,6 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
         string loaded = await File.ReadAllTextAsync(document.Path).ConfigureAwait(false);
         pendingUpdates[document.Path] = loaded;
         return loaded;
-    }
-
-    private static string GetMarkdownRelativePath(string fromDirectory, string toPath)
-    {
-        string from = Path.GetFullPath(fromDirectory);
-        string to = Path.GetFullPath(toPath);
-        string relative = Path.GetRelativePath(from, to);
-        return relative.Replace(Path.DirectorySeparatorChar, '/');
-    }
-
-    private static string FormatDisplayTitle(int recordNumber, string title)
-    {
-        string trimmedTitle = title?.Trim() ?? string.Empty;
-
-        if (Regex.IsMatch(trimmedTitle, @"^\d+\.\s"))
-        {
-            return trimmedTitle;
-        }
-
-        return string.IsNullOrWhiteSpace(trimmedTitle)
-            ? recordNumber.ToString(CultureInfo.InvariantCulture)
-            : $"{recordNumber}. {trimmedTitle}";
     }
 
     public class Settings : CommandSettings

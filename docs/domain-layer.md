@@ -11,3 +11,5 @@ La segunda etapa del plan de integración introduce una capa reutilizable que ab
 El modelo `Adr` refleja los datos extraídos, incluyendo número de registro, título, fecha, contenido y metadatos normalizados. La utilería `SafeFileName()` genera slugs compatibles con la convención de `adr-tools`, removiendo diacríticos y caracteres no alfanuméricos antes de construir el nombre `####-slug.md`.
 
 Estos servicios quedan registrados en `ServiceCollectionExtensions.ConfigureDependencies`, lo que permite inyectarlos desde Spectre.Console y reutilizarlos en los nuevos comandos (`adr new`, `adr list`, `adr link`, etc.).
+
+Además se añadió `AdrWorkspaceContextFactory`, una pieza de infraestructura ligera que centraliza la resolución del directorio de trabajo (ya sea por `--path` o por `adr.config.json`) y expone la plantilla activa. Esta fábrica se utiliza ahora en `adr new`, `adr list`, `adr link` y `adr upgrade repository`, garantizando que todos los comandos compartan la misma semántica al localizar el repositorio y las plantillas.

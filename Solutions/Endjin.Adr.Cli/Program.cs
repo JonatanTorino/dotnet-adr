@@ -5,10 +5,13 @@
 using System.Threading.Tasks;
 
 using Endjin.Adr.Cli.Commands.Init;
+using Endjin.Adr.Cli.Commands.Link;
+using Endjin.Adr.Cli.Commands.List;
 using Endjin.Adr.Cli.Commands.New;
 using Endjin.Adr.Cli.Commands.Templates.Default;
 using Endjin.Adr.Cli.Commands.Templates.List;
 using Endjin.Adr.Cli.Commands.Templates.Package;
+using Endjin.Adr.Cli.Commands.Upgrade;
 using Endjin.Adr.Cli.Extensions;
 using Endjin.Adr.Cli.Infrastructure.Injection;
 
@@ -64,8 +67,19 @@ public static class Program
             config.AddExample("environment", "init");
             config.AddExample("environment", "reset");
 
+            config.AddExample("list");
+            config.AddExample("list", "--recursive");
+            config.AddExample("link", "12", "Amends", "10", "Amended by");
+            config.AddExample("upgrade", "repository");
+
             config.AddCommand<NewAdrCommand>("new")
                   .WithDescription("Creates a new Architectural Decision Record, from the default ADR Template.");
+
+            config.AddCommand<ListAdrCommand>("list")
+                  .WithDescription("Lists the Architecture Decision Records discovered in the repository.");
+
+            config.AddCommand<LinkAdrCommand>("link")
+                  .WithDescription("Creates reciprocal links between existing Architectural Decision Records.");
 
             config.AddBranch("environment", environment =>
             {
@@ -74,6 +88,13 @@ public static class Program
                            .WithDescription("Initializes a new ADR repository.");
                 environment.AddCommand<EnvironmentResetCommand>("reset")
                            .WithDescription("Resets the state of the ADR repository.");
+            });
+
+            config.AddBranch("upgrade", upgrade =>
+            {
+                upgrade.SetDescription("Upgrade ADR repository assets to the latest format");
+                upgrade.AddCommand<UpgradeRepositoryCommand>("repository")
+                       .WithDescription("Normalises ADR documents (dates, metadata) to the latest supported conventions.");
             });
 
             config.AddBranch("templates", templates =>
