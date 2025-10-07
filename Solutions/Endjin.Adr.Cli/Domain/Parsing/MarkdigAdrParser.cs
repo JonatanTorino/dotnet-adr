@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -25,6 +26,14 @@ public class MarkdigAdrParser : IAdrDocumentParser
     private static readonly Regex StatusLineRegex = new("^\\*\\s*Status:\\s*(?<value>.+)$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex LinkLineRegex = new("^\\*\\s*(?<relationship>[^\\[]+?)?\\s*\\[(?<text>[^\\]]+)\\]\\((?<target>[^\\)]+)\\)", RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex MarkdownLinkRegex = new("\\[(?<text>[^\\]]+)\\]\\((?<target>[^\\)]+)\\)", RegexOptions.Compiled);
+    private static readonly Regex DateLineRegex = new("^Date:\\s*(?<value>.+)$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly string[] SupportedDateFormats =
+    {
+        "yyyy-MM-dd",
+        "yyyy/MM/dd",
+        "dd/MM/yyyy",
+        "MM/dd/yyyy",
+    };
     private readonly MarkdownPipeline pipeline;
 
     public MarkdigAdrParser()
@@ -43,6 +52,7 @@ public class MarkdigAdrParser : IAdrDocumentParser
 
         AdrStatus status = ExtractStatus(sections);
         IReadOnlyList<AdrLink> links = ExtractLinks(sections);
+        DateTime? date = ExtractDate(content, metadata);
 
         return new Adr
         {
@@ -54,6 +64,7 @@ public class MarkdigAdrParser : IAdrDocumentParser
             Status = status,
             Links = links,
             Metadata = metadata,
+            Date = date,
         };
     }
 
@@ -189,6 +200,41 @@ public class MarkdigAdrParser : IAdrDocumentParser
         }
 
         return new AdrStatus(normalizedValue, reference);
+    }
+
+    private static DateTime? ExtractDate(string content, IReadOnlyDictionary<string, string> metadata)
+    {
+        if (metadata.TryGetValue("Date", out string metadataValue) && TryParseDate(metadataValue, out DateTime metadataDate))
+        {
+            return metadataDate;
+        }
+
+        Match match = DateLineRegex.Match(content ?? string.Empty);
+
+        if (match.Success && TryParseDate(match.Groups["value"].Value, out DateTime date))
+        {
+            return date;
+        }
+
+        return null;
+    }
+
+    private static bool TryParseDate(string candidate, out DateTime date)
+    {
+        string value = candidate?.Trim();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            date = default;
+            return false;
+        }
+
+        if (DateTime.TryParseExact(value, SupportedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+        {
+            return true;
+        }
+
+        return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out date);
     }
 
     private static IReadOnlyList<AdrLink> ExtractLinks(IEnumerable<AdrSection> sections)

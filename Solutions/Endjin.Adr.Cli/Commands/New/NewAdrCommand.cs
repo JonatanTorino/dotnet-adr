@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -104,7 +105,8 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
                 Content = CreateNewDefaultTemplate(settings.Title, this.templateSettingsManager, templatePath),
                 RecordNumber = documents.Count == 0 ? 1 : documents.OrderBy(x => x.RecordNumber).Last().RecordNumber + 1,
                 Title = settings.Title,
-                Metadata = new Dictionary<string, string>(),
+                Date = DateTime.Today,
+                Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
                 Sections = Array.Empty<AdrSection>(),
                 Links = Array.Empty<AdrLink>(),
                 Status = AdrStatus.Empty,
@@ -159,7 +161,7 @@ public partial class NewAdrCommand : AsyncCommand<NewAdrCommand.Settings>
 
         return yamlHeaderRegExp
             .Replace(templateContents, $"# {title}")
-            .Replace("{DATE}", DateTime.Now.ToShortDateString());
+            .Replace("{DATE}", DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
     [GeneratedRegex(@"((?:^-{3})(?:.*\n)*(?:^-{3})\n# Title)", RegexOptions.Multiline)]

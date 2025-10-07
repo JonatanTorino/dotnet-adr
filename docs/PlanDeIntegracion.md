@@ -22,7 +22,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
    - Registrar la capa por medio de inyección de dependencias, reutilizando Markdig/YamlDotNet y extendiendo Adr.
    - Exponer estados y enlaces a través de este núcleo para reutilización en los nuevos comandos.
    - ✅ Repositorio de ADR con descubrimiento en disco, lector y parser Markdig/YamlDotNet registrado vía DI.
-   - ✅ Modelo `Adr` extendido con secciones, estado, enlaces y metadatos listos para ser reutilizados.
+   - ✅ Modelo `Adr` extendido con fecha, secciones, estado, enlaces y metadatos listos para ser reutilizados (ver [capa de dominio](./domain-layer.md)).
 3. **Ampliar el flujo de `adr new`**
    - Permitir múltiples banderas `-s` y `-l` dentro de `NewAdrCommand`.
    - Actualizar estados y enlaces simétricos y habilitar la inyección de fecha para pruebas.

@@ -4,6 +4,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Endjin.Adr.Cli.Domain.Models;
 
@@ -12,6 +15,8 @@ namespace Endjin.Adr.Cli.Domain.Models;
 /// </summary>
 public class Adr
 {
+    private static readonly Regex SlugSanitizer = new("[^a-z0-9]+", RegexOptions.Compiled);
+
     /// <summary>
     /// Gets or sets the ADR identifier.
     /// </summary>
@@ -26,6 +31,11 @@ public class Adr
     /// Gets or sets the title of the ADR.
     /// </summary>
     public string Title { get; init; }
+
+    /// <summary>
+    /// Gets or sets the decision date when available.
+    /// </summary>
+    public DateTime? Date { get; init; }
 
     /// <summary>
     /// Gets or sets the raw Markdown content of the ADR.
@@ -50,7 +60,7 @@ public class Adr
     /// <summary>
     /// Gets or sets the metadata extracted from the optional YAML front matter.
     /// </summary>
-    public IReadOnlyDictionary<string, string> Metadata { get; init; } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string> Metadata { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Gets a normalized file name for the ADR.
@@ -58,7 +68,40 @@ public class Adr
     /// <returns>A normalized file name including the record number.</returns>
     public string SafeFileName()
     {
-        string slug = this.Title?.ToLowerInvariant().Replace(" ", "-") ?? string.Empty;
+        string title = this.Title ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            title = RemoveDiacritics(title).ToLowerInvariant();
+        }
+
+        string slug = SlugSanitizer
+            .Replace(title, "-")
+            .Trim('-');
+
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            slug = "adr";
+        }
+
         return $"{this.RecordNumber:D4}-{slug}.md";
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        string normalized = text.Normalize(NormalizationForm.FormD);
+        StringBuilder builder = new(text.Length);
+
+        foreach (char c in normalized)
+        {
+            UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(c);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 }
