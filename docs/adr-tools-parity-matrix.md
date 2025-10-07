@@ -30,7 +30,7 @@ de los scripts ubicados en `src/` dentro de `adr-tools`.
 | Generación | `adr generate toc [-i INTRO] [-o OUTRO] [-p PREFIX]` | Produce TOC Markdown parametrizable. | Completo: genera Markdown ordenado con prefijos y contenido de intro/outro desde archivos. | Soporta rutas relativas al repositorio y lectura segura de archivos externos. |
 | Generación | `adr generate graph [-p PREFIX] [-e EXT]` | Genera DOT con enlaces y relaciones. | Completo: emite Graphviz DOT con nodos ordenados, enlaces de estado y prefijo/extensión configurables. | Reutiliza el analizador de estado para poblar aristas y evita duplicados. |
 | Mantenimiento | `adr upgrade-repository` | Normaliza formato de fechas en ADR existentes a ISO 8601. | Completo: `adr upgrade repository` actualiza todas las líneas `Date:` al formato ISO-8601. | Opera de forma recursiva y reporta los archivos modificados. |
-| Ayuda | `adr help [COMMAND]` | Muestra comandos y ayuda detallada con paginador. | Parcial: Spectre.Console provee `adr --help` y descripciones de comandos existentes, sin paginador ni ayuda específica por subcomando. | Podría ampliarse con ejemplos y soporte multinivel. |
+| Ayuda | `adr help [COMMAND]` | Muestra comandos y ayuda detallada con paginador. | Completo: la configuración de Spectre agrega descripciones y ejemplos para `new`, `list`, `link`, `upgrade repository` y `generate`. | Documentación complementaria disponible en README y [guía de UX](./cli-ux-guide.md). |
 
 ## Capacidades exclusivas de `dotnet-adr`
 

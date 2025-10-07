@@ -54,6 +54,8 @@ public static class Program
             config.AddExample("new", "\"Integration of an Event Store\"", "-i", "1");
             config.AddExample("new", "\"Integration of an Event Store\"", "-p", @"c:\repo\my-project\docs\adr");
             config.AddExample("new", "\"Integration of an Event Store\"", "-i", "1", "-p", @"c:\repo\my-project\docs\adr");
+            config.AddExample("new", "\"Integration of an Event Store\"", "-s", "1", "-s", "2");
+            config.AddExample("new", "\"Integration of an Event Store\"", "-l", "5:Amends:Amended by");
 
             config.AddExample("templates", "package", "set", "thirdparty.adr.templates");
 
@@ -70,11 +72,16 @@ public static class Program
             config.AddExample("environment", "reset");
 
             config.AddExample("list");
+            config.AddExample("list", "--path", @"c:\repo\my-project\docs\adr");
             config.AddExample("list", "--recursive");
             config.AddExample("link", "12", "Amends", "10", "Amended by");
+            config.AddExample("link", "--path", @"c:\repo\my-project\docs\adr", "12", "Amends", "10", "Amended by");
             config.AddExample("upgrade", "repository");
+            config.AddExample("upgrade", "repository", "--path", @"c:\repo\my-project\docs\adr");
             config.AddExample("generate", "toc");
+            config.AddExample("generate", "toc", "--intro", @"docs\\adr\\_intro.md", "--prefix", "https://contoso.dev/adr/");
             config.AddExample("generate", "graph");
+            config.AddExample("generate", "graph", "--extension", ".md");
 
             config.AddCommand<NewAdrCommand>("new")
                   .WithDescription("Creates a new Architectural Decision Record, from the default ADR Template.");

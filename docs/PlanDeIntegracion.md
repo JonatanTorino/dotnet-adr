@@ -9,7 +9,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 - [x] Paso 3: Ampliar el flujo de `adr new`.
 - [x] Paso 4: Incorporar comandos adicionales con Spectre.
 - [x] Paso 5: Implementar la rama `adr generate`.
-- [ ] Paso 6: Actualizar la UX/DX.
+- [x] Paso 6: Actualizar la UX/DX.
 
 ## Pasos
 
@@ -43,6 +43,9 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 6. **Actualizar la UX/DX**
    - Añadir ayuda integrada, documentación en el README y guías de plantillas/variables de entorno.
    - Actualizar pipelines para ejecutar los nuevos escenarios y asegurar retrocompatibilidad con `adr.config.json` y plantillas NuGet.
+   - ✅ README y [guía de UX](./cli-ux-guide.md) documentan los comandos `list`, `link`, `upgrade` y `generate`, incluyendo `ADR_DATE` y `adr.config.json`.
+   - ✅ Ejemplos adicionales en la ayuda integrada (`Program.cs`) muestran el uso de múltiples `-s`/`-l`, prefijos y `--path` compartido por todos los comandos.
+   - ✅ Nuevo flujo de CI ejecuta las especificaciones del CLI y se añadieron pruebas unitarias que garantizan la compatibilidad con `adr.config.json`.
 
 ## Capacidades resultantes
 
