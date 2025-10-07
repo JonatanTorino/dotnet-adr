@@ -1,0 +1,26 @@
+name: cli-tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.x'
+    - name: Restore
+      run: dotnet restore Solutions/Endjin.Adr.sln
+    - name: Build
+      run: dotnet build Solutions/Endjin.Adr.sln --configuration Release --no-restore
+    - name: Run CLI specs
+      run: dotnet test Solutions/Endjin.Adr.Cli.Specs/Endjin.Adr.Cli.Specs.csproj --configuration Release --no-build

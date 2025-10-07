@@ -4,11 +4,16 @@
 
 using System.Threading.Tasks;
 
+using Endjin.Adr.Cli.Commands.Generate.Graph;
+using Endjin.Adr.Cli.Commands.Generate.Toc;
 using Endjin.Adr.Cli.Commands.Init;
+using Endjin.Adr.Cli.Commands.Link;
+using Endjin.Adr.Cli.Commands.List;
 using Endjin.Adr.Cli.Commands.New;
 using Endjin.Adr.Cli.Commands.Templates.Default;
 using Endjin.Adr.Cli.Commands.Templates.List;
 using Endjin.Adr.Cli.Commands.Templates.Package;
+using Endjin.Adr.Cli.Commands.Upgrade;
 using Endjin.Adr.Cli.Extensions;
 using Endjin.Adr.Cli.Infrastructure.Injection;
 
@@ -49,6 +54,8 @@ public static class Program
             config.AddExample("new", "\"Integration of an Event Store\"", "-i", "1");
             config.AddExample("new", "\"Integration of an Event Store\"", "-p", @"c:\repo\my-project\docs\adr");
             config.AddExample("new", "\"Integration of an Event Store\"", "-i", "1", "-p", @"c:\repo\my-project\docs\adr");
+            config.AddExample("new", "\"Integration of an Event Store\"", "-s", "1", "-s", "2");
+            config.AddExample("new", "\"Integration of an Event Store\"", "-l", "5:Amends:Amended by");
 
             config.AddExample("templates", "package", "set", "thirdparty.adr.templates");
 
@@ -64,8 +71,35 @@ public static class Program
             config.AddExample("environment", "init");
             config.AddExample("environment", "reset");
 
+            config.AddExample("list");
+            config.AddExample("list", "--path", @"c:\repo\my-project\docs\adr");
+            config.AddExample("list", "--recursive");
+            config.AddExample("link", "12", "Amends", "10", "Amended by");
+            config.AddExample("link", "--path", @"c:\repo\my-project\docs\adr", "12", "Amends", "10", "Amended by");
+            config.AddExample("upgrade", "repository");
+            config.AddExample("upgrade", "repository", "--path", @"c:\repo\my-project\docs\adr");
+            config.AddExample("generate", "toc");
+            config.AddExample("generate", "toc", "--intro", @"docs\\adr\\_intro.md", "--prefix", "https://contoso.dev/adr/");
+            config.AddExample("generate", "graph");
+            config.AddExample("generate", "graph", "--extension", ".md");
+
             config.AddCommand<NewAdrCommand>("new")
                   .WithDescription("Creates a new Architectural Decision Record, from the default ADR Template.");
+
+            config.AddCommand<ListAdrCommand>("list")
+                  .WithDescription("Lists the Architecture Decision Records discovered in the repository.");
+
+            config.AddCommand<LinkAdrCommand>("link")
+                  .WithDescription("Creates reciprocal links between existing Architectural Decision Records.");
+
+            config.AddBranch("generate", generate =>
+            {
+                generate.SetDescription("Generate ADR documentation and visualisations");
+                generate.AddCommand<GenerateTocCommand>("toc")
+                        .WithDescription("Produces a Markdown table of contents for the ADR repository.");
+                generate.AddCommand<GenerateGraphCommand>("graph")
+                        .WithDescription("Produces a Graphviz DOT graph of ADR relationships.");
+            });
 
             config.AddBranch("environment", environment =>
             {
@@ -74,6 +108,13 @@ public static class Program
                            .WithDescription("Initializes a new ADR repository.");
                 environment.AddCommand<EnvironmentResetCommand>("reset")
                            .WithDescription("Resets the state of the ADR repository.");
+            });
+
+            config.AddBranch("upgrade", upgrade =>
+            {
+                upgrade.SetDescription("Upgrade ADR repository assets to the latest format");
+                upgrade.AddCommand<UpgradeRepositoryCommand>("repository")
+                       .WithDescription("Normalises ADR documents (dates, metadata) to the latest supported conventions.");
             });
 
             config.AddBranch("templates", templates =>

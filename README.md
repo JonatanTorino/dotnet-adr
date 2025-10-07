@@ -37,6 +37,7 @@ Create a new ADR using:
     - [Installing dotnet adr](#installing-dotnet-adr)
     - [Using dotnet adr](#using-dotnet-adr)
     - [Configure the default ADR location in your repo](#configure-the-default-adr-location-in-your-repo)
+    - [Workspace configuration & environment variables](#workspace-configuration--environment-variables)
   - [ADR Templates and ADR Template Packages](#adr-templates-and-adr-template-packages)
     - [Example ADRs](#example-adrs)
     - [Which ADR templates are available out of the box?](#which-adr-templates-are-available-out-of-the-box)
@@ -138,9 +139,23 @@ Here is a detailed list of the available `adr` commands:
 
 `adr new <TITLE> -i <RECORD NUMBER>` - Creates a new Architectural Decision Record, superseding the specified ADR record, which will have its status updated to reflect to point to this newly created ADR.
 
+`adr new <TITLE> -s <REFERENCE>` - Accepts multiple `-s/--supersede` flags so you can supersede several ADRs in one go. References can be a record number, slug, or title fragment.
+
+`adr new <TITLE> -l <TARGET:LINK:REVERSE>` - Accepts multiple `-l/--link` flags for custom bidirectional relationships.
+
+`adr new <TITLE> --date <ISO-8601 DATE>` - Overrides the decision date; defaults to today or the `ADR_DATE` environment variable when present.
+
 `adr new <TITLE> -p <PATH>` - Creates a new Architectural Decision Record, from the current default ADR Template, from the current ADR Template package, for the Architecture Knowledge Management (AKM) folder located at the specified path.
 
-`adr new <TITLE> -i <RECORD NUMBER> -p <PATH>` - Creates a new Architectural Decision Record, for the Architecture Knowledge Management (AKM) folder located at the specified path, superseding the specified ADR record, which will have its status updated to reflect to point to this newly created ADR.
+`adr list [-p <PATH>] [--recursive]` - Lists existing ADRs using the shared repository discovery, including record number, title, status summary, and relative file path.
+
+`adr link <SOURCE> <RELATIONSHIP> <TARGET> <REVERSE> [-p <PATH>]` - Updates two existing ADRs with reciprocal relationships inside the `## Status` section.
+
+`adr upgrade repository [-p <PATH>]` - Normalises the `Date:` metadata in every ADR to ISO-8601.
+
+`adr generate toc [--intro <FILE>] [--outro <FILE>] [--prefix <URL>] [-p <PATH>]` - Produces a Markdown table of contents using the repository metadata.
+
+`adr generate graph [--prefix <URL>] [--extension <EXT>] [-p <PATH>]` - Emits a Graphviz DOT graph describing ADR dependencies and links.
 
 `adr templates` - Manipulate ADR Templates & ADR Template Packages. Root command for template operations. Will list available sub-commands.
 
@@ -169,6 +184,23 @@ Here is a detailed list of the available `adr` commands:
 `adr environment init <PATH>` - Initializes a new Architecture Knowledge Management (AKM) folder. If `<PATH>` is omitted, it will create `docs\adr` in the current directory.
 
 `adr environment reset` - Resets the `adr` environment back to its default settings.
+
+`adr help <COMMAND>` - Displays contextual help for the specified command, including the examples listed above.
+
+#### Workspace configuration & environment variables
+
+`dotnet-adr` resolves the working directory using the optional `adr.config.json` file at the root of your repository. The configuration supports `path` (relative directory containing ADRs) and `templatePath` (custom template to use when authoring decisions):
+
+```json
+{
+    "path": "./docs/adr",
+    "templatePath": "./docs/templates/adr.md"
+}
+```
+
+When the CLI cannot find a configuration file it falls back to the current directory. You can override the resolved location on a per-command basis using `-p|--path`.
+
+For repeatable automation the CLI also honours `ADR_DATE`. When set (for example in CI) it will be used as the default date for new ADRs unless you pass `--date` explicitly.
 
 ### Configure the default ADR location in your repo
 
