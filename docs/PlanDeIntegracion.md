@@ -8,7 +8,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 - [x] Paso 2: Diseñar la capa de dominio para ADRs.
 - [x] Paso 3: Ampliar el flujo de `adr new`.
 - [x] Paso 4: Incorporar comandos adicionales con Spectre.
-- [ ] Paso 5: Implementar la rama `adr generate`.
+- [x] Paso 5: Implementar la rama `adr generate`.
 - [ ] Paso 6: Actualizar la UX/DX.
 
 ## Pasos
@@ -38,6 +38,8 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 5. **Implementar la rama `adr generate`**
    - Agregar subcomandos `toc` y `graph` que produzcan, respectivamente, Markdown y Graphviz DOT.
    - Permitir la parametrización de prefijos, extensiones e intro/outro, y validar con snapshots de prueba.
+   - ✅ `adr generate toc` genera Markdown canonizado con encabezado, prefijo opcional y soporta intro/outro leídos desde disco.
+   - ✅ `adr generate graph` emite Graphviz DOT con nodos ordenados, enlaces de estado y parametrización de prefijo/extensión.
 6. **Actualizar la UX/DX**
    - Añadir ayuda integrada, documentación en el README y guías de plantillas/variables de entorno.
    - Actualizar pipelines para ejecutar los nuevos escenarios y asegurar retrocompatibilidad con `adr.config.json` y plantillas NuGet.

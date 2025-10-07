@@ -4,6 +4,8 @@
 
 using System.Threading.Tasks;
 
+using Endjin.Adr.Cli.Commands.Generate.Graph;
+using Endjin.Adr.Cli.Commands.Generate.Toc;
 using Endjin.Adr.Cli.Commands.Init;
 using Endjin.Adr.Cli.Commands.Link;
 using Endjin.Adr.Cli.Commands.List;
@@ -71,6 +73,8 @@ public static class Program
             config.AddExample("list", "--recursive");
             config.AddExample("link", "12", "Amends", "10", "Amended by");
             config.AddExample("upgrade", "repository");
+            config.AddExample("generate", "toc");
+            config.AddExample("generate", "graph");
 
             config.AddCommand<NewAdrCommand>("new")
                   .WithDescription("Creates a new Architectural Decision Record, from the default ADR Template.");
@@ -80,6 +84,15 @@ public static class Program
 
             config.AddCommand<LinkAdrCommand>("link")
                   .WithDescription("Creates reciprocal links between existing Architectural Decision Records.");
+
+            config.AddBranch("generate", generate =>
+            {
+                generate.SetDescription("Generate ADR documentation and visualisations");
+                generate.AddCommand<GenerateTocCommand>("toc")
+                        .WithDescription("Produces a Markdown table of contents for the ADR repository.");
+                generate.AddCommand<GenerateGraphCommand>("graph")
+                        .WithDescription("Produces a Graphviz DOT graph of ADR relationships.");
+            });
 
             config.AddBranch("environment", environment =>
             {
