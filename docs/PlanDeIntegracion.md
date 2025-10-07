@@ -6,7 +6,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
 
 - [x] Paso 1: [Matriz de paridad con `adr-tools`](./adr-tools-parity-matrix.md).
 - [x] Paso 2: Diseñar la capa de dominio para ADRs.
-- [ ] Paso 3: Ampliar el flujo de `adr new`.
+- [x] Paso 3: Ampliar el flujo de `adr new`.
 - [ ] Paso 4: Incorporar comandos adicionales con Spectre.
 - [ ] Paso 5: Implementar la rama `adr generate`.
 - [ ] Paso 6: Actualizar la UX/DX.
@@ -27,6 +27,7 @@ Este documento resume los pasos previstos para alcanzar la paridad funcional con
    - Permitir múltiples banderas `-s` y `-l` dentro de `NewAdrCommand`.
    - Actualizar estados y enlaces simétricos y habilitar la inyección de fecha para pruebas.
    - Cubrir el comportamiento con escenarios SpecFlow que igualen los scripts actuales.
+   - ✅ `adr new` ahora admite colecciones de `-s`/`-l`, genera enlaces recíprocos, limpia estados "Accepted" y permite fijar la fecha vía `--date` o `ADR_DATE`.
 4. **Incorporar comandos adicionales con Spectre**
    - Implementar `adr list`, `adr link` y `adr upgrade repository` sobre el nuevo servicio.
    - Formatear la salida con `AnsiConsole` y validar efectos en disco mediante pruebas BDD y unitarias.
